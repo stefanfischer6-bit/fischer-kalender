@@ -3,271 +3,494 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Fischer Kalender</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Fischer Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700;900&display=swap');
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: #1a2744; overflow: hidden; }
-.screen {
-  height: 100vh;
-  width: 100vw;
-  background: linear-gradient(160deg, #1a2744 0%, #0e1a35 100%);
-  display: flex;
-  flex-direction: row;
-  font-family: 'Nunito', sans-serif;
-  color: #f0e8d5;
-}
-.left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  border-right: 1px solid rgba(255,255,255,0.08);
-}
-.time {
-  font-size: clamp(4rem, 13vw, 9rem);
-  font-weight: 900;
-  color: #f9f3e8;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.weekday {
-  font-size: clamp(1.5rem, 4vw, 3rem);
-  font-weight: 700;
-  color: #f0d080;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.6rem;
-}
-.date-full {
-  font-size: clamp(1rem, 2.5vw, 1.6rem);
-  font-weight: 300;
-  color: #c8b896;
-  margin-top: 0.3rem;
-}
-.greeting {
-  font-size: clamp(0.9rem, 2vw, 1.2rem);
-  font-weight: 300;
-  color: #6a8ab0;
-  margin-top: 2rem;
-  font-style: italic;
-}
-.right {
-  width: 360px;
-  min-width: 280px;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.2rem;
-  overflow-y: auto;
-}
-.right::-webkit-scrollbar { width: 4px; }
-.right::-webkit-scrollbar-track { background: transparent; }
-.right::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-.cal-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6a8ab0;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 1.2rem;
-}
-.event-group { margin-bottom: 1.4rem; }
-.event-date-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #4a6fa5;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.event-card {
-  background: rgba(255,255,255,0.05);
-  border-left: 3px solid #f0d080;
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.5rem;
-}
-.event-card.past { border-left-color: #3a5070; opacity: 0.55; }
-.event-card.allday { border-left-color: #4a9fa5; }
-.event-time {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #a0b8d8;
-  margin-bottom: 0.15rem;
-}
-.event-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #f0e8d5;
-  line-height: 1.3;
-}
-.event-loc {
-  font-size: 0.75rem;
-  color: #7a8fa8;
-  margin-top: 0.2rem;
-}
-.no-events { font-size: 0.9rem; color: #4a6070; font-style: italic; padding: 0.5rem 0; }
-.loading { font-size: 0.9rem; color: #6a8ab0; font-style: italic; padding: 0.5rem 0; }
-.error-msg { font-size: 0.8rem; color: #c05050; padding: 0.5rem 0; line-height: 1.6; }
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --text-secondary: #5c5c5c;
+    --text-tertiary: #999;
+    --accent: #c45d3e;
+    --accent-soft: #f3e0d8;
+    --border: #e8e4de;
+    --border-light: #efece7;
+    --today-glow: rgba(196, 93, 62, 0.05);
+    --radius: 14px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dashboard {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* ── Left Panel ── */
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 32px;
+    background: var(--surface);
+    border-right: 1px solid var(--border-light);
+  }
+
+  .clock-container { text-align: center; }
+
+  .time {
+    font-size: 88px;
+    font-weight: 300;
+    letter-spacing: -3px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .time-seconds {
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--text-tertiary);
+    vertical-align: super;
+    margin-left: 2px;
+  }
+
+  .date-container { margin-top: 20px; text-align: center; }
+
+  .date-weekday {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .date-full {
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text-secondary);
+  }
+
+  .status-pill {
+    margin-top: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s;
+  }
+  .status-pill.loaded { color: #3d8b5e; background: #f0f9f3; border-color: #d4edda; }
+  .status-pill.error { color: #b44; background: #fef5f5; border-color: #f5dada; }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); }
+  .status-pill.loading .status-dot { background: var(--accent); animation: blink 1.4s ease-in-out infinite; }
+  .status-pill.loaded .status-dot { background: #3d8b5e; }
+  .status-pill.error .status-dot { background: #b44; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  /* ── Right Panel ── */
+  .right-panel {
+    padding: 28px 32px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .right-panel::-webkit-scrollbar { display: none; }
+
+  .cal-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+  .cal-title { font-size: 22px; font-weight: 600; }
+  .cal-subtitle { font-size: 13px; color: var(--text-tertiary); }
+
+  /* ── Day Cards ── */
+  .day-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .day-card.is-today {
+    border-color: var(--accent);
+    box-shadow: var(--shadow), 0 0 0 1px var(--accent), inset 0 0 40px var(--today-glow);
+  }
+
+  .day-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 8px;
+  }
+  .day-card-left { display: flex; align-items: center; gap: 14px; }
+
+  .day-num {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1;
+    min-width: 40px;
+    text-align: center;
+  }
+  .is-today .day-num {
+    color: #fff;
+    background: var(--accent);
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    font-size: 22px;
+  }
+
+  .day-name-group { display: flex; flex-direction: column; }
+  .day-weekday { font-size: 14px; font-weight: 600; }
+  .day-month { font-size: 12px; color: var(--text-tertiary); }
+  .is-today .day-weekday { color: var(--accent); }
+
+  .day-badge {
+    font-size: 11px; font-weight: 600;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 3px 10px; border-radius: 10px;
+  }
+
+  .day-events-list { padding: 0 18px 12px; }
+
+  .event-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 7px 0;
+    border-top: 1px solid var(--border-light);
+  }
+  .event-row:first-child { border-top: none; }
+
+  .event-time-col {
+    min-width: 60px; font-size: 13px; font-weight: 500;
+    color: var(--text-tertiary); padding-top: 1px; text-align: right;
+  }
+  .event-time-col.all-day {
+    color: var(--accent); font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .3px;
+  }
+
+  .event-bar {
+    width: 3px; align-self: stretch; min-height: 18px;
+    border-radius: 2px; background: var(--accent); flex-shrink: 0; opacity: .5;
+  }
+
+  .event-info { flex: 1; min-width: 0; }
+  .event-title { font-size: 14px; font-weight: 500; line-height: 1.35; }
+  .event-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
+
+  .no-events { padding: 4px 0; font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+
+  /* ── Responsive ── */
+  @media (max-width: 820px) {
+    .dashboard { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .left-panel {
+      border-right: none; border-bottom: 1px solid var(--border-light);
+      padding: 24px; flex-direction: row; justify-content: space-between;
+    }
+    .clock-container { text-align: left; }
+    .time { font-size: 56px; }
+    .time-seconds { font-size: 18px; }
+    .date-container { margin-top: 6px; }
+    .date-full { font-size: 16px; }
+    .status-pill { margin-top: 0; position: absolute; top: 12px; right: 16px; }
+    .right-panel { padding: 20px 16px; }
+  }
+
+  .skeleton-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border-light); padding: 20px;
+    margin-bottom: 10px; height: 72px; position: relative; overflow: hidden;
+  }
+  .skeleton-card::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(90deg,transparent 0%,rgba(0,0,0,.02) 50%,transparent 100%);
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 </style>
 </head>
 <body>
-<div class="screen">
-  <div class="left">
-    <div class="time" id="time">00:00</div>
-    <div class="weekday" id="weekday">Montag</div>
-    <div class="date-full" id="date-full">1. Januar 2025</div>
-    <div class="greeting" id="greeting">Guten Morgen!</div>
+<div class="dashboard">
+  <div class="left-panel">
+    <div class="clock-container">
+      <div class="time" id="clock">00:00<span class="time-seconds">00</span></div>
+      <div class="date-container">
+        <div class="date-weekday" id="dateWeekday"></div>
+        <div class="date-full" id="dateFull"></div>
+      </div>
+      <div class="status-pill loading" id="statusPill">
+        <div class="status-dot"></div>
+        <span id="statusText">Laden…</span>
+      </div>
+    </div>
   </div>
-  <div class="right">
-    <div class="cal-title">📅 Fischer Kalender</div>
-    <div id="events-container"><div class="loading">Termine werden geladen…</div></div>
+
+  <div class="right-panel">
+    <div class="cal-header">
+      <div class="cal-title">Nächste 7 Tage</div>
+      <div class="cal-subtitle" id="calRange"></div>
+    </div>
+    <div id="calendarList">
+      <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      <div class="skeleton-card"></div><div class="skeleton-card"></div>
+    </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js"></script>
 <script>
-// Direkt ohne Proxy – funktioniert in Safari auf iPad/Mac
-const ICAL_URL = 'https://p176-caldav.icloud.com/published/2/MjEyNDc1MTc1MjEyNDc1MXt1pLI_9q6RHSJMgFWwViSxkGTHGKkhHYB9zgorFGkLnDRmDKlzbSGK5e02Bu65fxiUcT5Nr4TP-lieTKE1SLo';
+// ── Clock ──
+function updateClock(){
+  const n=new Date();
+  const h=String(n.getHours()).padStart(2,'0');
+  const m=String(n.getMinutes()).padStart(2,'0');
+  const s=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').innerHTML=`${h}:${m}<span class="time-seconds">${s}</span>`;
+  document.getElementById('dateWeekday').textContent=n.toLocaleDateString('de-DE',{weekday:'long'});
+  document.getElementById('dateFull').textContent=n.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});
+}
+updateClock(); setInterval(updateClock,1000);
 
-const WEEKDAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+function updateRange(){
+  const t=new Date(),e=new Date(t); e.setDate(e.getDate()+6);
+  const f=d=>d.toLocaleDateString('de-DE',{day:'numeric',month:'short'});
+  document.getElementById('calRange').textContent=`${f(t)} – ${f(e)}`;
+}
+updateRange();
 
-function pad(n) { return String(n).padStart(2,'0'); }
-
-function getGreeting(h) {
-  if (h < 11) return 'Guten Morgen!';
-  if (h < 14) return 'Guten Mittag!';
-  if (h < 18) return 'Guten Nachmittag!';
-  return 'Guten Abend!';
+// ── ICS Parser ──
+function unfold(t){return t.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/\n[ \t]/g,'').split('\n');}
+function unesc(s){return s.replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');}
+function pDate(s){
+  if(!s)return null;
+  if(s.length===8)return new Date(+s.substr(0,4),+s.substr(4,2)-1,+s.substr(6,2));
+  const m=s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/);
+  if(m){const[,y,mo,d,h,mi,sc,z]=m;return z==='Z'?new Date(Date.UTC(+y,+mo-1,+d,+h,+mi,+sc)):new Date(+y,+mo-1,+d,+h,+mi,+sc);}
+  return new Date(s);
 }
 
-function updateClock() {
-  const now = new Date();
-  document.getElementById('time').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
-  document.getElementById('weekday').textContent = WEEKDAYS[now.getDay()];
-  document.getElementById('date-full').textContent = now.getDate() + '. ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
-  document.getElementById('greeting').textContent = getGreeting(now.getHours());
-}
-
-function dateKey(d) {
-  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-}
-
-function friendlyDate(d) {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  if (dateKey(d) === dateKey(today)) return 'Heute';
-  if (dateKey(d) === dateKey(tomorrow)) return 'Morgen';
-  return WEEKDAYS[d.getDay()] + ', ' + d.getDate() + '. ' + MONTHS[d.getMonth()];
-}
-
-async function loadCalendar() {
-  const container = document.getElementById('events-container');
-  try {
-    const res = await fetch(ICAL_URL, { cache: 'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-
-    const jcal = ICAL.parse(text);
-    const comp = new ICAL.Component(jcal);
-    const vevents = comp.getAllSubcomponents('vevent');
-
-    const now = new Date();
-    const rangeEnd = new Date(now);
-    rangeEnd.setDate(now.getDate() + 14);
-
-    const events = [];
-
-    vevents.forEach(vevent => {
-      try {
-        const ev = new ICAL.Event(vevent);
-        const summary = ev.summary || '(kein Titel)';
-        const location = ev.location || '';
-
-        if (ev.isRecurring()) {
-          const iter = ev.iterator();
-          let next;
-          let count = 0;
-          while ((next = iter.next()) && count < 30) {
-            count++;
-            const start = next.toJSDate();
-            if (start > rangeEnd) break;
-            const duration = ev.duration;
-            const end = new Date(start.getTime() + (duration ? duration.toSeconds() * 1000 : 3600000));
-            if (end >= now) {
-              events.push({ start, end, summary, location, allday: ev.startDate.isDate });
-            }
-          }
-        } else {
-          const start = ev.startDate.toJSDate();
-          const end = ev.endDate ? ev.endDate.toJSDate() : new Date(start.getTime() + 3600000);
-          const isAllDay = ev.startDate.isDate;
-          if (end >= now && start <= rangeEnd) {
-            events.push({ start, end, summary, location, allday: isAllDay });
-          }
-        }
-      } catch(e) {}
-    });
-
-    events.sort((a, b) => a.start - b.start);
-
-    if (events.length === 0) {
-      container.innerHTML = '<div class="no-events">Keine Termine in den nächsten 14 Tagen.</div>';
-      return;
+function parseICS(text){
+  const lines=unfold(text),events=[];
+  let inEv=false,ev={};
+  for(const line of lines){
+    if(line==='BEGIN:VEVENT'){inEv=true;ev={};continue;}
+    if(line==='END:VEVENT'){
+      inEv=false;
+      if(ev.dtstart){
+        const isAllDay=ev.dtstart.length===8;
+        const start=pDate(ev.dtstart), end=ev.dtend?pDate(ev.dtend):new Date(start);
+        events.push({summary:ev.summary||'(Kein Titel)',location:ev.location||'',
+          description:ev.description||'',start,end,isAllDay,
+          uid:ev.uid||Math.random().toString(36),rrule:ev.rrule||null});
+      }
+      continue;
     }
-
-    const groups = {};
-    events.forEach(ev => {
-      const k = dateKey(ev.start);
-      if (!groups[k]) groups[k] = { date: ev.start, items: [] };
-      groups[k].items.push(ev);
-    });
-
-    let html = '';
-    Object.keys(groups).sort().forEach(k => {
-      const g = groups[k];
-      html += '<div class="event-group">';
-      html += '<div class="event-date-label">' + friendlyDate(g.date) + '</div>';
-      g.items.forEach(ev => {
-        const isPast = ev.end < now;
-        const cls = isPast ? 'past' : (ev.allday ? 'allday' : '');
-        html += '<div class="event-card ' + cls + '">';
-        if (ev.allday) {
-          html += '<div class="event-time">Ganztägig</div>';
-        } else {
-          html += '<div class="event-time">'
-            + pad(ev.start.getHours()) + ':' + pad(ev.start.getMinutes())
-            + ' – '
-            + pad(ev.end.getHours()) + ':' + pad(ev.end.getMinutes())
-            + ' Uhr</div>';
-        }
-        html += '<div class="event-name">' + ev.summary + '</div>';
-        if (ev.location) html += '<div class="event-loc">📍 ' + ev.location + '</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    });
-
-    container.innerHTML = html;
-
-  } catch(e) {
-    container.innerHTML = '<div class="error-msg">'
-      + 'Kalender konnte nicht geladen werden.<br>'
-      + '<small>' + e.message + '</small>'
-      + '</div>';
+    if(!inEv)continue;
+    const ci=line.indexOf(':');if(ci===-1)continue;
+    const key=line.substring(0,ci).split(';')[0].toUpperCase(),val=line.substring(ci+1);
+    if(key==='DTSTART')ev.dtstart=val;
+    else if(key==='DTEND')ev.dtend=val;
+    else if(key==='SUMMARY')ev.summary=unesc(val);
+    else if(key==='LOCATION')ev.location=unesc(val);
+    else if(key==='DESCRIPTION')ev.description=unesc(val);
+    else if(key==='UID')ev.uid=val;
+    else if(key==='RRULE')ev.rrule=val;
   }
+  return events;
 }
 
-updateClock();
-setInterval(updateClock, 30000);
+// ── RRULE ──
+function expandEvents(events,rS,rE){
+  const out=[];
+  for(const ev of events){
+    if(!ev.rrule){out.push(ev);continue;}
+    const rules={};ev.rrule.split(';').forEach(p=>{const[k,v]=p.split('=');rules[k]=v;});
+    const freq=rules.FREQ,interval=+(rules.INTERVAL||1),count=rules.COUNT?+rules.COUNT:730;
+    const until=rules.UNTIL?pDate(rules.UNTIL):rE,dur=ev.end-ev.start;
+    let cur=new Date(ev.start),i=0;
+    while(cur<=until&&cur<=rE&&i<count){
+      if(cur>=rS||new Date(cur.getTime()+dur)>=rS)
+        out.push({...ev,start:new Date(cur),end:new Date(cur.getTime()+dur),isRecurrence:true});
+      if(freq==='DAILY')cur.setDate(cur.getDate()+interval);
+      else if(freq==='WEEKLY')cur.setDate(cur.getDate()+7*interval);
+      else if(freq==='MONTHLY')cur.setMonth(cur.getMonth()+interval);
+      else if(freq==='YEARLY')cur.setFullYear(cur.getFullYear()+interval);
+      else break;
+      i++;
+    }
+  }
+  return out;
+}
+
+// ── Load ──
+const ICAL_URL='https://p176-caldav.icloud.com/published/2/MjEyNDc1MTc1MjEyNDc1MXt1pLI_9q6RHSJMgFWwViSxkGTHGKkhHYB9zgorFGkLnDRmDKlzbSGK5e02Bu65fxiUcT5Nr4TP-lieTKE1SLo';
+const PROXIES=[
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
+let allEvents=[];
+
+function setStatus(t,c){
+  document.getElementById('statusPill').className=`status-pill ${c}`;
+  document.getElementById('statusText').textContent=t;
+}
+
+async function loadCalendar(){
+  setStatus('Laden…','loading');
+  for(let i=0;i<PROXIES.length;i++){
+    try{
+      const ctrl=new AbortController(),to=setTimeout(()=>ctrl.abort(),12000);
+      const resp=await fetch(PROXIES[i](ICAL_URL),{signal:ctrl.signal});
+      clearTimeout(to);
+      if(!resp.ok)continue;
+      const text=await resp.text();
+      if(!text.includes('BEGIN:VCALENDAR'))continue;
+      const raw=parseICS(text);
+      const now=new Date(),rS=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      const rE=new Date(rS);rE.setDate(rE.getDate()+8);
+      allEvents=expandEvents(raw,rS,rE);
+      setStatus(`${allEvents.length} Termine`,'loaded');
+      renderDays();return;
+    }catch(e){continue;}
+  }
+  setStatus('Fehler','error');
+  document.getElementById('calendarList').innerHTML=`
+    <div style="text-align:center;padding:60px 20px;color:var(--text-tertiary)">
+      <div style="font-size:36px;margin-bottom:12px;opacity:.3">⚠️</div>
+      <div style="font-size:14px;margin-bottom:14px">Kalender konnte nicht geladen werden</div>
+      <button onclick="loadCalendar()" style="padding:7px 18px;border-radius:18px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:inherit;font-size:13px;color:var(--text-secondary)">Erneut versuchen</button>
+    </div>`;
+}
+
+// ── Render ──
+function toKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function dayStart(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+const DAY_MS=86400000;
+
+function getEventsForDate(date){
+  const dS=dayStart(date).getTime(), dE=dS+DAY_MS;
+  return allEvents.filter(ev=>{
+    // Overlap check: event [evStart, evEnd) overlaps day [dS, dE)
+    return ev.start.getTime()<dE && ev.end.getTime()>dS;
+  }).sort((a,b)=>{
+    if(a.isAllDay&&!b.isAllDay)return -1;
+    if(!a.isAllDay&&b.isAllDay)return 1;
+    return a.start-b.start;
+  });
+}
+
+function fmtTime(d){return d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function isToday(d){const t=new Date();return d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate();}
+
+function multiDayLabel(ev,day){
+  const eS=dayStart(ev.start).getTime();
+  let eE;
+  if(ev.isAllDay){
+    eE=ev.end.getTime();
+  } else {
+    // For timed events, count the end day only if event extends past midnight
+    const endDay=dayStart(ev.end).getTime();
+    eE = ev.end.getTime()>endDay ? endDay+DAY_MS : endDay;
+  }
+  const total=Math.round((eE-eS)/DAY_MS);
+  if(total<=1)return null;
+  const cur=dayStart(day).getTime();
+  const num=Math.round((cur-eS)/DAY_MS)+1;
+  return `Tag ${num} von ${total}`;
+}
+
+function renderDays(){
+  let html='';
+  for(let i=0;i<7;i++){
+    const day=new Date(); day.setDate(day.getDate()+i); day.setHours(0,0,0,0);
+    const today=isToday(day), evts=getEventsForDate(day);
+    const wd=day.toLocaleDateString('de-DE',{weekday:'long'});
+    const mn=day.toLocaleDateString('de-DE',{month:'long'});
+
+    html+=`<div class="day-card ${today?'is-today':''}">
+      <div class="day-card-header">
+        <div class="day-card-left">
+          <div class="day-num">${day.getDate()}</div>
+          <div class="day-name-group">
+            <div class="day-weekday">${wd}${today?' — Heute':''}</div>
+            <div class="day-month">${mn}</div>
+          </div>
+        </div>
+        ${evts.length?`<div class="day-badge">${evts.length} Termin${evts.length>1?'e':''}</div>`:''}
+      </div>
+      <div class="day-events-list">`;
+
+    if(!evts.length){
+      html+=`<div class="no-events">Keine Termine</div>`;
+    } else {
+      for(const ev of evts){
+        let timeStr;
+        if(ev.isAllDay){
+          timeStr='Ganztag';
+        } else {
+          const sKey=toKey(ev.start), eKey=toKey(ev.end), tKey=toKey(day);
+          if(sKey===eKey) timeStr=fmtTime(ev.start);
+          else if(tKey===sKey) timeStr=`ab ${fmtTime(ev.start)}`;
+          else if(tKey===eKey) timeStr=`bis ${fmtTime(ev.end)}`;
+          else timeStr='Ganztag';
+        }
+        const tcls=(ev.isAllDay||timeStr==='Ganztag')?'event-time-col all-day':'event-time-col';
+        const ml=multiDayLabel(ev,day);
+
+        html+=`<div class="event-row">
+          <div class="${tcls}">${timeStr}</div>
+          <div class="event-bar"></div>
+          <div class="event-info">
+            <div class="event-title">${esc(ev.summary)}</div>
+            ${ml?`<div class="event-meta">${ml}</div>`:''}
+            ${ev.location?`<div class="event-meta">📍 ${esc(ev.location)}</div>`:''}
+          </div>
+        </div>`;
+      }
+    }
+    html+=`</div></div>`;
+  }
+  document.getElementById('calendarList').innerHTML=html;
+}
+
+// ── Init ──
 loadCalendar();
-setInterval(loadCalendar, 5 * 60 * 1000);
+setInterval(loadCalendar,15*60*1000);
+(function midnight(){
+  const n=new Date(),m=new Date(n);m.setDate(m.getDate()+1);m.setHours(0,0,5,0);
+  setTimeout(()=>{renderDays();updateRange();loadCalendar();midnight();},m-n);
+})();
 </script>
 </body>
 </html>
