@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fischer Kalender</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #1a2744; overflow: hidden; }
+.screen {
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(160deg, #1a2744 0%, #0e1a35 100%);
+  display: flex;
+  flex-direction: row;
+  font-family: 'Nunito', sans-serif;
+  color: #f0e8d5;
+}
+.left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.time {
+  font-size: clamp(4rem, 13vw, 9rem);
+  font-weight: 900;
+  color: #f9f3e8;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.weekday {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 700;
+  color: #f0d080;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.6rem;
+}
+.date-full {
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  font-weight: 300;
+  color: #c8b896;
+  margin-top: 0.3rem;
+}
+.greeting {
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  font-weight: 300;
+  color: #6a8ab0;
+  margin-top: 2rem;
+  font-style: italic;
+}
+.right {
+  width: 360px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.2rem;
+  overflow-y: auto;
+}
+.right::-webkit-scrollbar { width: 4px; }
+.right::-webkit-scrollbar-track { background: transparent; }
+.right::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.cal-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6a8ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 1.2rem;
+}
+.event-group { margin-bottom: 1.4rem; }
+.event-date-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4a6fa5;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.event-card {
+  background: rgba(255,255,255,0.05);
+  border-left: 3px solid #f0d080;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.5rem;
+}
+.event-card.past { border-left-color: #3a5070; opacity: 0.55; }
+.event-card.allday { border-left-color: #4a9fa5; }
+.event-time {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a0b8d8;
+  margin-bottom: 0.15rem;
+}
+.event-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f0e8d5;
+  line-height: 1.3;
+}
+.event-loc {
+  font-size: 0.75rem;
+  color: #7a8fa8;
+  margin-top: 0.2rem;
+}
+.no-events { font-size: 0.9rem; color: #4a6070; font-style: italic; padding: 0.5rem 0; }
+.loading { font-size: 0.9rem; color: #6a8ab0; font-style: italic; padding: 0.5rem 0; }
+.error-msg { font-size: 0.8rem; color: #c05050; padding: 0.5rem 0; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="left">
+    <div class="time" id="time">00:00</div>
+    <div class="weekday" id="weekday">Montag</div>
+    <div class="date-full" id="date-full">1. Januar 2025</div>
+    <div class="greeting" id="greeting">Guten Morgen!</div>
+  </div>
+  <div class="right">
+    <div class="cal-title">📅 Fischer Kalender</div>
+    <div id="events-container"><div class="loading">Termine werden geladen…</div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js"></script>
+<script>
+// Direkt ohne Proxy – funktioniert in Safari auf iPad/Mac
+const ICAL_URL = 'https://p176-caldav.icloud.com/published/2/MjEyNDc1MTc1MjEyNDc1MXt1pLI_9q6RHSJMgFWwViSxkGTHGKkhHYB9zgorFGkLnDRmDKlzbSGK5e02Bu65fxiUcT5Nr4TP-lieTKE1SLo';
+
+const WEEKDAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function getGreeting(h) {
+  if (h < 11) return 'Guten Morgen!';
+  if (h < 14) return 'Guten Mittag!';
+  if (h < 18) return 'Guten Nachmittag!';
+  return 'Guten Abend!';
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('time').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  document.getElementById('weekday').textContent = WEEKDAYS[now.getDay()];
+  document.getElementById('date-full').textContent = now.getDate() + '. ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  document.getElementById('greeting').textContent = getGreeting(now.getHours());
+}
+
+function dateKey(d) {
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+
+function friendlyDate(d) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (dateKey(d) === dateKey(today)) return 'Heute';
+  if (dateKey(d) === dateKey(tomorrow)) return 'Morgen';
+  return WEEKDAYS[d.getDay()] + ', ' + d.getDate() + '. ' + MONTHS[d.getMonth()];
+}
+
+async function loadCalendar() {
+  const container = document.getElementById('events-container');
+  try {
+    const res = await fetch(ICAL_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+
+    const jcal = ICAL.parse(text);
+    const comp = new ICAL.Component(jcal);
+    const vevents = comp.getAllSubcomponents('vevent');
+
+    const now = new Date();
+    const rangeEnd = new Date(now);
+    rangeEnd.setDate(now.getDate() + 14);
+
+    const events = [];
+
+    vevents.forEach(vevent => {
+      try {
+        const ev = new ICAL.Event(vevent);
+        const summary = ev.summary || '(kein Titel)';
+        const location = ev.location || '';
+
+        if (ev.isRecurring()) {
+          const iter = ev.iterator();
+          let next;
+          let count = 0;
+          while ((next = iter.next()) && count < 30) {
+            count++;
+            const start = next.toJSDate();
+            if (start > rangeEnd) break;
+            const duration = ev.duration;
+            const end = new Date(start.getTime() + (duration ? duration.toSeconds() * 1000 : 3600000));
+            if (end >= now) {
+              events.push({ start, end, summary, location, allday: ev.startDate.isDate });
+            }
+          }
+        } else {
+          const start = ev.startDate.toJSDate();
+          const end = ev.endDate ? ev.endDate.toJSDate() : new Date(start.getTime() + 3600000);
+          const isAllDay = ev.startDate.isDate;
+          if (end >= now && start <= rangeEnd) {
+            events.push({ start, end, summary, location, allday: isAllDay });
+          }
+        }
+      } catch(e) {}
+    });
+
+    events.sort((a, b) => a.start - b.start);
+
+    if (events.length === 0) {
+      container.innerHTML = '<div class="no-events">Keine Termine in den nächsten 14 Tagen.</div>';
+      return;
+    }
+
+    const groups = {};
+    events.forEach(ev => {
+      const k = dateKey(ev.start);
+      if (!groups[k]) groups[k] = { date: ev.start, items: [] };
+      groups[k].items.push(ev);
+    });
+
+    let html = '';
+    Object.keys(groups).sort().forEach(k => {
+      const g = groups[k];
+      html += '<div class="event-group">';
+      html += '<div class="event-date-label">' + friendlyDate(g.date) + '</div>';
+      g.items.forEach(ev => {
+        const isPast = ev.end < now;
+        const cls = isPast ? 'past' : (ev.allday ? 'allday' : '');
+        html += '<div class="event-card ' + cls + '">';
+        if (ev.allday) {
+          html += '<div class="event-time">Ganztägig</div>';
+        } else {
+          html += '<div class="event-time">'
+            + pad(ev.start.getHours()) + ':' + pad(ev.start.getMinutes())
+            + ' – '
+            + pad(ev.end.getHours()) + ':' + pad(ev.end.getMinutes())
+            + ' Uhr</div>';
+        }
+        html += '<div class="event-name">' + ev.summary + '</div>';
+        if (ev.location) html += '<div class="event-loc">📍 ' + ev.location + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+
+  } catch(e) {
+    container.innerHTML = '<div class="error-msg">'
+      + 'Kalender konnte nicht geladen werden.<br>'
+      + '<small>' + e.message + '</small>'
+      + '</div>';
+  }
+}
+
+updateClock();
+setInterval(updateClock, 30000);
+loadCalendar();
+setInterval(loadCalendar, 5 * 60 * 1000);
+</script>
+</body>
+</html>
