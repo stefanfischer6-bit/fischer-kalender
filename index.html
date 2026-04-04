@@ -58,6 +58,36 @@
 
   .clock-container { text-align: center; }
 
+  .greeting {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    min-height: 18px;
+  }
+
+  .quote-container {
+    margin-top: 24px;
+    padding: 0 8px;
+    text-align: center;
+    max-width: 260px;
+  }
+  .quote-text {
+    font-size: 12px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .quote-author {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+  }
+
   .time {
     font-size: 88px;
     font-weight: 300;
@@ -222,6 +252,7 @@
     .time-seconds { font-size: 18px; }
     .date-container { margin-top: 6px; }
     .date-full { font-size: 16px; }
+    .quote-container { display: none; }
     .status-pill { margin-top: 0; position: absolute; top: 12px; right: 16px; }
     .right-panel { padding: 20px 16px; }
   }
@@ -243,10 +274,15 @@
 <div class="dashboard">
   <div class="left-panel">
     <div class="clock-container">
+      <div class="greeting" id="greeting"></div>
       <div class="time" id="clock">00:00<span class="time-seconds">00</span></div>
       <div class="date-container">
         <div class="date-weekday" id="dateWeekday"></div>
         <div class="date-full" id="dateFull"></div>
+      </div>
+      <div class="quote-container">
+        <div class="quote-text" id="quoteText"></div>
+        <div class="quote-author" id="quoteAuthor"></div>
       </div>
       <div class="status-pill loading" id="statusPill">
         <div class="status-dot"></div>
@@ -268,6 +304,47 @@
 </div>
 
 <script>
+// ── Greeting ──
+function updateGreeting(){
+  const h=new Date().getHours();
+  let g;
+  if(h>=7&&h<12) g='Guten Morgen Senze!';
+  else if(h>=12&&h<17) g='Hallo Senze!';
+  else g='Guten Abend Senze!';
+  document.getElementById('greeting').textContent=g;
+}
+updateGreeting();
+setInterval(updateGreeting,60*1000);
+
+// ── Quote of the Day ──
+async function loadQuote(){
+  const today=new Date().toISOString().slice(0,10);
+  const cached=localStorage.getItem('quote_date');
+  if(cached===today){
+    const q=localStorage.getItem('quote_text'),a=localStorage.getItem('quote_author');
+    if(q){showQuote(q,a);return;}
+  }
+  const APIS=[
+    async()=>{const r=await fetch('https://api.quotable.io/random');const d=await r.json();return{q:d.content,a:d.author};},
+    async()=>{const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://zenquotes.io/api/today'));const d=await r.json();return{q:d[0].q,a:d[0].a};},
+  ];
+  for(const api of APIS){
+    try{
+      const{q,a}=await api();
+      if(!q)continue;
+      localStorage.setItem('quote_date',today);
+      localStorage.setItem('quote_text',q);
+      localStorage.setItem('quote_author',a);
+      showQuote(q,a);return;
+    }catch(e){continue;}
+  }
+}
+function showQuote(q,a){
+  document.getElementById('quoteText').textContent=`„${q}"`;
+  document.getElementById('quoteAuthor').textContent=`— ${a}`;
+}
+loadQuote();
+
 // ── Clock ──
 function updateClock(){
   const n=new Date();
@@ -487,6 +564,7 @@ function renderDays(){
 // ── Init ──
 loadCalendar();
 setInterval(loadCalendar,15*60*1000);
+setInterval(()=>location.reload(),5*60*1000);
 (function midnight(){
   const n=new Date(),m=new Date(n);m.setDate(m.getDate()+1);m.setHours(0,0,5,0);
   setTimeout(()=>{renderDays();updateRange();loadCalendar();midnight();},m-n);
