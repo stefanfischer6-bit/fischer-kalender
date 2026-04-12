@@ -185,12 +185,11 @@ async function loadQuote() {
     }
   }
   try {
-    const res = await fetch('https://api.zitate.pub/v2/quotes?format=json&count=1&lang=de');
+    const res = await fetch('https://api.zitat-service.de/v1/quote?language=de');
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    const q = json[0];
+    const q = await res.json();
     const text = q.quote;
-    const author = q.author && q.author.name ? q.author.name : 'Unbekannt';
+    const author = q.authorName || 'Unbekannt';
     localStorage.setItem('tagesspruch', JSON.stringify({ date: today, text, author }));
     document.getElementById('quote-text').textContent = text;
     document.getElementById('quote-author').textContent = '— ' + author;
