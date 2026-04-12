@@ -176,39 +176,29 @@ function getGreeting(h) {
 async function loadQuote() {
   const el = document.getElementById('quote-text');
   const elAuthor = document.getElementById('quote-author');
-  if (!el || !elAuthor) return;
 
   const setQuote = (text, author) => {
-    el.textContent = text;
-    elAuthor.textContent = '— ' + author;
+    if (el) el.textContent = text;
+    if (elAuthor) elAuthor.textContent = '— ' + author;
   };
 
-  // Check daily cache
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const cached = JSON.parse(localStorage.getItem('quote_de') || 'null');
-    if (cached && cached.date === today && cached.text && isGerman(cached.text)) {
-      setQuote(cached.text, cached.author);
-      return;
-    }
-  } catch(e) {}
-
-  // Fetch from API, retry up to 5x to get a German quote
   const isGerman = t => /[äöüßÄÖÜ]/.test(t) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(t);
+
+  // Clear any stale cached quotes
+  ['tagesspruch','tagesspruch_de','tagesspruch_de2','tagesspruch_v3','quote','quote_de'].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+
+  // Fetch fresh German quote, retry up to 10x
   try {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       const res = await fetch('https://api.zitat-service.de/v1/quote?language=de');
       const q = await res.json();
       if (isGerman(q.quote)) {
-        const today = new Date().toISOString().split('T')[0];
-        try { localStorage.setItem('quote_de', JSON.stringify({ date: today, text: q.quote, author: q.authorName || 'Unbekannt' })); } catch(e) {}
         setQuote(q.quote, q.authorName || 'Unbekannt');
         return;
       }
     }
   } catch(e) {}
 
-  // Fallback
   setQuote('In der Beschränkung zeigt sich erst der Meister.', 'Johann Wolfgang von Goethe');
 }
 
