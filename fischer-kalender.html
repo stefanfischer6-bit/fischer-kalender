@@ -54,6 +54,29 @@ html, body { height: 100%; background: #1a2744; overflow: hidden; }
   margin-top: 2rem;
   font-style: italic;
 }
+.quote-of-day {
+  margin-top: 2.5rem;
+  max-width: 380px;
+  text-align: center;
+  padding: 0 1rem;
+}
+.quote-text {
+  font-size: clamp(0.85rem, 1.6vw, 1.05rem);
+  font-weight: 300;
+  color: #c8b896;
+  font-style: italic;
+  line-height: 1.6;
+}
+.quote-text::before { content: '„'; }
+.quote-text::after  { content: '"'; }
+.quote-author {
+  font-size: clamp(0.75rem, 1.2vw, 0.85rem);
+  font-weight: 700;
+  color: #4a6fa5;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .right {
   width: 360px;
   min-width: 280px;
@@ -122,6 +145,10 @@ html, body { height: 100%; background: #1a2744; overflow: hidden; }
     <div class="weekday" id="weekday">Montag</div>
     <div class="date-full" id="date-full">1. Januar 2025</div>
     <div class="greeting" id="greeting">Guten Morgen!</div>
+    <div class="quote-of-day">
+      <div class="quote-text" id="quote-text"></div>
+      <div class="quote-author" id="quote-author"></div>
+    </div>
   </div>
   <div class="right">
     <div class="cal-title">📅 Fischer Kalender</div>
@@ -144,6 +171,33 @@ function getGreeting(h) {
   if (h < 14) return 'Guten Mittag!';
   if (h < 18) return 'Guten Nachmittag!';
   return 'Guten Abend!';
+}
+
+async function loadQuote() {
+  const today = new Date().toISOString().split('T')[0];
+  const cached = localStorage.getItem('tagesspruch');
+  if (cached) {
+    const data = JSON.parse(cached);
+    if (data.date === today) {
+      document.getElementById('quote-text').textContent = data.text;
+      document.getElementById('quote-author').textContent = '— ' + data.author;
+      return;
+    }
+  }
+  try {
+    const res = await fetch('https://api.zitate.pub/v2/quotes?format=json&count=1&lang=de');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const q = json[0];
+    const text = q.quote;
+    const author = q.author && q.author.name ? q.author.name : 'Unbekannt';
+    localStorage.setItem('tagesspruch', JSON.stringify({ date: today, text, author }));
+    document.getElementById('quote-text').textContent = text;
+    document.getElementById('quote-author').textContent = '— ' + author;
+  } catch(e) {
+    document.getElementById('quote-text').textContent = 'In der Beschränkung zeigt sich erst der Meister.';
+    document.getElementById('quote-author').textContent = '— Johann Wolfgang von Goethe';
+  }
 }
 
 function updateClock() {
@@ -265,6 +319,7 @@ async function loadCalendar() {
 }
 
 updateClock();
+loadQuote();
 setInterval(updateClock, 30000);
 loadCalendar();
 setInterval(loadCalendar, 5 * 60 * 1000);
