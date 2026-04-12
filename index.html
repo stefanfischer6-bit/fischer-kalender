@@ -338,17 +338,6 @@ async function loadQuote(){
       }
     }catch(e){}
   }
-  const APIS=[
-  for(const api of APIS){
-    try{
-      const{q,a}=await api();
-      if(!q)continue;
-      localStorage.setItem('quote_date',today);
-      localStorage.setItem('quote_text',q);
-      localStorage.setItem('quote_author',a);
-      showQuote(q,a);return;
-    }catch(e){continue;}
-  }
 }
 function showQuote(q,a){
   document.getElementById('quoteText').textContent=`„${q}"`;
