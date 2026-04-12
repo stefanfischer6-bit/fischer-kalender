@@ -175,7 +175,7 @@ function getGreeting(h) {
 
 async function loadQuote() {
   const today = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem('tagesspruch');
+  const cached = localStorage.getItem('tagesspruch_de');
   if (cached) {
     const data = JSON.parse(cached);
     if (data.date === today) {
@@ -190,7 +190,7 @@ async function loadQuote() {
     const q = await res.json();
     const text = q.quote;
     const author = q.authorName || 'Unbekannt';
-    localStorage.setItem('tagesspruch', JSON.stringify({ date: today, text, author }));
+    localStorage.setItem('tagesspruch_de', JSON.stringify({ date: today, text, author }));
     document.getElementById('quote-text').textContent = text;
     document.getElementById('quote-author').textContent = '— ' + author;
   } catch(e) {
