@@ -324,10 +324,21 @@ async function loadQuote(){
     const q=localStorage.getItem('quote_text'),a=localStorage.getItem('quote_author');
     if(q){showQuote(q,a);return;}
   }
+  const isGerman=t=>/[äöüßÄÖÜ]/.test(t)||/\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(t);
+  const notEnglish=t=>!/\b(the|and|is|are|was|were|have|has|will|this|that|with|for|not|but|from|they|you|life|time|love|death|dead|great|good|people|world|never|always)\b/i.test(t);
+  for(let i=0;i<10;i++){
+    try{
+      const r=await fetch('https://api.zitat-service.de/v1/quote?language=de&_='+Date.now()+i,{cache:'no-store'});
+      const d=await r.json();
+      if(d.quote&&isGerman(d.quote)&&notEnglish(d.quote)){
+        localStorage.setItem('quote_date',today);
+        localStorage.setItem('quote_text',d.quote);
+        localStorage.setItem('quote_author',d.authorName||'Unbekannt');
+        showQuote(d.quote,d.authorName||'Unbekannt');return;
+      }
+    }catch(e){}
+  }
   const APIS=[
-    async()=>{const r=await fetch('https://api.quotable.io/random');const d=await r.json();return{q:d.content,a:d.author};},
-    async()=>{const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://zenquotes.io/api/today'));const d=await r.json();return{q:d[0].q,a:d[0].a};},
-  ];
   for(const api of APIS){
     try{
       const{q,a}=await api();
