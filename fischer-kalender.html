@@ -173,42 +173,43 @@ function getGreeting(h) {
   return 'Guten Abend!';
 }
 
-function isGerman(text) {
-  return /[äöüßÄÖÜ]/.test(text) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(text);
-}
-
 async function loadQuote() {
-  ['tagesspruch','tagesspruch_de','tagesspruch_de2'].forEach(k => localStorage.removeItem(k));
-  const today = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem('tagesspruch_v3');
-  if (cached) {
-    const data = JSON.parse(cached);
-    if (data.date === today && isGerman(data.text)) {
-      document.getElementById('quote-text').textContent = data.text;
-      document.getElementById('quote-author').textContent = '— ' + data.author;
+  const el = document.getElementById('quote-text');
+  const elAuthor = document.getElementById('quote-author');
+  if (!el || !elAuthor) return;
+
+  const setQuote = (text, author) => {
+    el.textContent = text;
+    elAuthor.textContent = '— ' + author;
+  };
+
+  // Check daily cache
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const cached = JSON.parse(localStorage.getItem('quote') || 'null');
+    if (cached && cached.date === today && cached.text) {
+      setQuote(cached.text, cached.author);
       return;
     }
-  }
+  } catch(e) {}
+
+  // Fetch from API, retry up to 5x to get a German quote
+  const isGerman = t => /[äöüßÄÖÜ]/.test(t) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(t);
   try {
-    let text, author;
     for (let i = 0; i < 5; i++) {
       const res = await fetch('https://api.zitat-service.de/v1/quote?language=de');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
       const q = await res.json();
       if (isGerman(q.quote)) {
-        text = q.quote;
-        author = q.authorName || 'Unbekannt';
-        break;
+        const today = new Date().toISOString().split('T')[0];
+        try { localStorage.setItem('quote', JSON.stringify({ date: today, text: q.quote, author: q.authorName || 'Unbekannt' })); } catch(e) {}
+        setQuote(q.quote, q.authorName || 'Unbekannt');
+        return;
       }
     }
-    if (!text) throw new Error('Kein deutsches Zitat gefunden');
-    localStorage.setItem('tagesspruch_v3', JSON.stringify({ date: today, text, author }));
-    document.getElementById('quote-text').textContent = text;
-    document.getElementById('quote-author').textContent = '— ' + author;
-  } catch(e) {
-    document.getElementById('quote-text').textContent = 'In der Beschränkung zeigt sich erst der Meister.';
-    document.getElementById('quote-author').textContent = '— Johann Wolfgang von Goethe';
-  }
+  } catch(e) {}
+
+  // Fallback
+  setQuote('In der Beschränkung zeigt sich erst der Meister.', 'Johann Wolfgang von Goethe');
 }
 
 function updateClock() {
