@@ -178,8 +178,9 @@ function isGerman(text) {
 }
 
 async function loadQuote() {
+  ['tagesspruch','tagesspruch_de','tagesspruch_de2'].forEach(k => localStorage.removeItem(k));
   const today = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem('tagesspruch_de2');
+  const cached = localStorage.getItem('tagesspruch_v3');
   if (cached) {
     const data = JSON.parse(cached);
     if (data.date === today && isGerman(data.text)) {
@@ -201,7 +202,7 @@ async function loadQuote() {
       }
     }
     if (!text) throw new Error('Kein deutsches Zitat gefunden');
-    localStorage.setItem('tagesspruch_de2', JSON.stringify({ date: today, text, author }));
+    localStorage.setItem('tagesspruch_v3', JSON.stringify({ date: today, text, author }));
     document.getElementById('quote-text').textContent = text;
     document.getElementById('quote-author').textContent = '— ' + author;
   } catch(e) {
