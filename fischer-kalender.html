@@ -182,7 +182,8 @@ async function loadQuote() {
     if (elAuthor) elAuthor.textContent = '— ' + author;
   };
 
-  const isGerman = t => /[äöüßÄÖÜ]/.test(t) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(t);
+  const isEnglish = t => /\b(the|and|is|are|was|were|have|has|will|this|that|with|for|not|but|from|they|you|life|time|love|death|dead|great|good|people|world|never|always|every|make|just|like|know|think|want|need|come|give|take|feel|bring|keep|find|say|get|let|put|see|use)\b/i.test(t);
+  const isGerman = t => !isEnglish(t) && (/[äöüßÄÖÜ]/.test(t) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass|wer|wir|mich|dir|uns|ihr|war|hat|dem|den|des)\b/i.test(t));
 
   // Clear any stale cached quotes
   ['tagesspruch','tagesspruch_de','tagesspruch_de2','tagesspruch_v3','quote','quote_de'].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
