@@ -173,24 +173,35 @@ function getGreeting(h) {
   return 'Guten Abend!';
 }
 
+function isGerman(text) {
+  return /[äöüßÄÖÜ]/.test(text) || /\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(text);
+}
+
 async function loadQuote() {
   const today = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem('tagesspruch_de');
+  const cached = localStorage.getItem('tagesspruch_de2');
   if (cached) {
     const data = JSON.parse(cached);
-    if (data.date === today) {
+    if (data.date === today && isGerman(data.text)) {
       document.getElementById('quote-text').textContent = data.text;
       document.getElementById('quote-author').textContent = '— ' + data.author;
       return;
     }
   }
   try {
-    const res = await fetch('https://api.zitat-service.de/v1/quote?language=de');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const q = await res.json();
-    const text = q.quote;
-    const author = q.authorName || 'Unbekannt';
-    localStorage.setItem('tagesspruch_de', JSON.stringify({ date: today, text, author }));
+    let text, author;
+    for (let i = 0; i < 5; i++) {
+      const res = await fetch('https://api.zitat-service.de/v1/quote?language=de');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const q = await res.json();
+      if (isGerman(q.quote)) {
+        text = q.quote;
+        author = q.authorName || 'Unbekannt';
+        break;
+      }
+    }
+    if (!text) throw new Error('Kein deutsches Zitat gefunden');
+    localStorage.setItem('tagesspruch_de2', JSON.stringify({ date: today, text, author }));
     document.getElementById('quote-text').textContent = text;
     document.getElementById('quote-author').textContent = '— ' + author;
   } catch(e) {
