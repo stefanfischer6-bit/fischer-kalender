@@ -186,8 +186,8 @@ async function loadQuote() {
   // Check daily cache
   try {
     const today = new Date().toISOString().split('T')[0];
-    const cached = JSON.parse(localStorage.getItem('quote') || 'null');
-    if (cached && cached.date === today && cached.text) {
+    const cached = JSON.parse(localStorage.getItem('quote_de') || 'null');
+    if (cached && cached.date === today && cached.text && isGerman(cached.text)) {
       setQuote(cached.text, cached.author);
       return;
     }
@@ -201,7 +201,7 @@ async function loadQuote() {
       const q = await res.json();
       if (isGerman(q.quote)) {
         const today = new Date().toISOString().split('T')[0];
-        try { localStorage.setItem('quote', JSON.stringify({ date: today, text: q.quote, author: q.authorName || 'Unbekannt' })); } catch(e) {}
+        try { localStorage.setItem('quote_de', JSON.stringify({ date: today, text: q.quote, author: q.authorName || 'Unbekannt' })); } catch(e) {}
         setQuote(q.quote, q.authorName || 'Unbekannt');
         return;
       }
