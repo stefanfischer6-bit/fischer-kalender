@@ -190,7 +190,7 @@ async function loadQuote() {
   // Fetch fresh German quote, retry up to 10x
   try {
     for (let i = 0; i < 10; i++) {
-      const res = await fetch('https://api.zitat-service.de/v1/quote?language=de', { cache: 'no-store' });
+      const res = await fetch('https://api.zitat-service.de/v1/quote?language=de&_=' + Date.now() + i, { cache: 'no-store' });
       const q = await res.json();
       if (isGerman(q.quote)) {
         setQuote(q.quote, q.authorName || 'Unbekannt');
