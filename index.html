@@ -257,6 +257,40 @@
     .right-panel { padding: 20px 16px; }
   }
 
+  /* ── Photo Stream ── */
+  .photo-stream {
+    margin-top: 28px;
+    width: 100%;
+    max-width: 260px;
+  }
+  .photo-frame {
+    width: 100%;
+    aspect-ratio: 4/3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--border-light);
+    position: relative;
+  }
+  .photo-frame img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    position: absolute; inset: 0;
+    transition: opacity 0.8s ease;
+  }
+  .photo-frame img.fade-out { opacity: 0; }
+  .photo-dots {
+    display: flex; justify-content: center; gap: 5px; margin-top: 8px;
+  }
+  .photo-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--border); transition: background 0.3s;
+  }
+  .photo-dot.active { background: var(--accent); }
+  .photo-count {
+    text-align: center; font-size: 11px; color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+
   .skeleton-card {
     background: var(--surface); border-radius: var(--radius);
     border: 1px solid var(--border-light); padding: 20px;
@@ -287,6 +321,14 @@
       <div class="status-pill loading" id="statusPill">
         <div class="status-dot"></div>
         <span id="statusText">Laden…</span>
+      </div>
+      <div class="photo-stream" id="photoStream" style="display:none">
+        <div class="photo-frame">
+          <img id="photoImg" src="" alt="">
+          <img id="photoImgNext" src="" alt="" style="opacity:0">
+        </div>
+        <div class="photo-dots" id="photoDots"></div>
+        <div class="photo-count" id="photoCount"></div>
       </div>
     </div>
   </div>
@@ -319,24 +361,24 @@ setInterval(updateGreeting,60*1000);
 // ── Quote of the Day ──
 async function loadQuote(){
   const today=new Date().toISOString().slice(0,10);
-  const isGerman=t=>/[äöüßÄÖÜ]/.test(t)||/\b(der|die|das|und|ich|ist|ein|eine|nicht|du|wir|man|es|im|mit|von|zu|sich|auf|dass)\b/i.test(t);
-  const notEnglish=t=>!/\b(the|and|is|are|was|were|have|has|will|this|that|with|for|not|but|from|they|you|life|time|love|death|dead|great|good|people|world|never|always)\b/i.test(t);
   const cached=localStorage.getItem('quote_date');
   if(cached===today){
     const q=localStorage.getItem('quote_text'),a=localStorage.getItem('quote_author');
-    if(q&&isGerman(q)&&notEnglish(q)){showQuote(q,a);return;}
+    if(q){showQuote(q,a);return;}
   }
-  for(let i=0;i<10;i++){
+  const APIS=[
+    async()=>{const r=await fetch('https://api.quotable.io/random');const d=await r.json();return{q:d.content,a:d.author};},
+    async()=>{const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://zenquotes.io/api/today'));const d=await r.json();return{q:d[0].q,a:d[0].a};},
+  ];
+  for(const api of APIS){
     try{
-      const r=await fetch('https://api.zitat-service.de/v1/quote?language=de&_='+Date.now()+i,{cache:'no-store'});
-      const d=await r.json();
-      if(d.quote&&isGerman(d.quote)&&notEnglish(d.quote)){
-        localStorage.setItem('quote_date',today);
-        localStorage.setItem('quote_text',d.quote);
-        localStorage.setItem('quote_author',d.authorName||'Unbekannt');
-        showQuote(d.quote,d.authorName||'Unbekannt');return;
-      }
-    }catch(e){}
+      const{q,a}=await api();
+      if(!q)continue;
+      localStorage.setItem('quote_date',today);
+      localStorage.setItem('quote_text',q);
+      localStorage.setItem('quote_author',a);
+      showQuote(q,a);return;
+    }catch(e){continue;}
   }
 }
 function showQuote(q,a){
@@ -560,6 +602,60 @@ function renderDays(){
   }
   document.getElementById('calendarList').innerHTML=html;
 }
+
+// ── iCloud Photo Stream ──
+const ICLOUD_TOKEN = 'B1fGI9HKKGNomeT';
+let photoUrls = [], photoIndex = 0, photoTimer = null;
+
+async function loadPhotos() {
+  try {
+    const r = await fetch('/api/photos');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const urls = data.photos || [];
+    if (!urls.length) return;
+    photoUrls = urls.sort(() => Math.random() - 0.5);
+    photoIndex = 0;
+    showPhoto(0);
+    document.getElementById('photoStream').style.display = '';
+    buildDots();
+    clearInterval(photoTimer);
+    photoTimer = setInterval(nextPhoto, 5 * 60 * 1000);
+  } catch(e) {
+    console.warn('Photo stream error:', e);
+  }
+}
+
+function buildDots() {
+  const max = Math.min(photoUrls.length, 8);
+  document.getElementById('photoDots').innerHTML =
+    Array.from({length: max}, (_, i) =>
+      `<div class="photo-dot${i===0?' active':''}" id="dot-${i}"></div>`
+    ).join('');
+  document.getElementById('photoCount').textContent =
+    `${photoUrls.length} Fotos`;
+}
+
+function showPhoto(idx) {
+  const img = document.getElementById('photoImg');
+  img.classList.add('fade-out');
+  setTimeout(() => {
+    img.src = photoUrls[idx];
+    img.onload = () => img.classList.remove('fade-out');
+  }, 400);
+  const max = Math.min(photoUrls.length, 8);
+  for (let i = 0; i < max; i++) {
+    document.getElementById(`dot-${i}`)?.classList.toggle('active', i === idx % max);
+  }
+}
+
+function nextPhoto() {
+  photoIndex = (photoIndex + 1) % photoUrls.length;
+  showPhoto(photoIndex);
+}
+
+loadPhotos();
+setInterval(loadPhotos, 60 * 60 * 1000); // refresh every hour
 
 // ── Init ──
 loadCalendar();
