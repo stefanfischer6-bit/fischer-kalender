@@ -261,7 +261,7 @@
   .photo-stream {
     margin-top: 28px;
     width: 100%;
-    max-width: 260px;
+    max-width: 100%;
   }
   .photo-frame {
     width: 100%;
@@ -335,7 +335,7 @@
 
   <div class="right-panel">
     <div class="cal-header">
-      <div class="cal-title">Nächste 7 Tage</div>
+      <div class="cal-title">Nächste 5 Tage</div>
       <div class="cal-subtitle" id="calRange"></div>
     </div>
     <div id="calendarList">
@@ -400,7 +400,7 @@ function updateClock(){
 updateClock(); setInterval(updateClock,1000);
 
 function updateRange(){
-  const t=new Date(),e=new Date(t); e.setDate(e.getDate()+6);
+  const t=new Date(),e=new Date(t); e.setDate(e.getDate()+4);
   const f=d=>d.toLocaleDateString('de-DE',{day:'numeric',month:'short'});
   document.getElementById('calRange').textContent=`${f(t)} – ${f(e)}`;
 }
@@ -551,7 +551,7 @@ function multiDayLabel(ev,day){
 
 function renderDays(){
   let html='';
-  for(let i=0;i<7;i++){
+  for(let i=0;i<5;i++){
     const day=new Date(); day.setDate(day.getDate()+i); day.setHours(0,0,0,0);
     const today=isToday(day), evts=getEventsForDate(day);
     const wd=day.toLocaleDateString('de-DE',{weekday:'long'});
