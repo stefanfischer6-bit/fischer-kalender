@@ -2,11 +2,15 @@ name: Fetch iCloud Photos
 
 on:
   schedule:
-    - cron: '0 * * * *'   # every hour
+    - cron: '0 * * * *'   # every hour (GitHub often runs it later than that)
   workflow_dispatch:        # allow manual trigger
 
 permissions:
   contents: write
+
+concurrency:
+  group: fetch-photos
+  cancel-in-progress: false
 
 jobs:
   fetch:
@@ -14,13 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch photo URLs
+      - name: Install Pillow
+        run: python3 -m pip install --quiet pillow
+
+      - name: Download album into photos/
         run: python3 fetch_photos.py
 
-      - name: Commit photos.json if changed
+      - name: Commit photos if the album changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add photos.json
-          git diff --staged --quiet || git commit -m "chore: refresh photo URLs"
+          git add -A photos.json photos/
+          git diff --staged --quiet || git commit -m "chore: sync photos from iCloud album"
           git push

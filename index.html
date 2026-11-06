@@ -359,26 +359,30 @@ updateGreeting();
 setInterval(updateGreeting,60*1000);
 
 // ── Quote of the Day ──
+// One German quote per day from zitat-service.de (CORS-enabled, no proxy needed),
+// cached in localStorage so the 5-minute page reload keeps the same quote.
 async function loadQuote(){
-  const today=new Date().toISOString().slice(0,10);
-  const cached=localStorage.getItem('quote_date');
-  if(cached===today){
-    const q=localStorage.getItem('quote_text'),a=localStorage.getItem('quote_author');
-    if(q){showQuote(q,a);return;}
-  }
-  const APIS=[
-    async()=>{const r=await fetch('https://api.quotable.io/random');const d=await r.json();return{q:d.content,a:d.author};},
-    async()=>{const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://zenquotes.io/api/today'));const d=await r.json();return{q:d[0].q,a:d[0].a};},
-  ];
-  for(const api of APIS){
+  const today=toKey(new Date());
+  try{
+    if(localStorage.getItem('quote_de_date')===today){
+      const q=localStorage.getItem('quote_de_text');
+      if(q){showQuote(q,localStorage.getItem('quote_de_author'));return;}
+    }
+  }catch(e){}
+  for(let i=0;i<3;i++){
     try{
-      const{q,a}=await api();
-      if(!q)continue;
-      localStorage.setItem('quote_date',today);
-      localStorage.setItem('quote_text',q);
-      localStorage.setItem('quote_author',a);
-      showQuote(q,a);return;
-    }catch(e){continue;}
+      const r=await fetch('https://api.zitat-service.de/v1/quote?language=de',{cache:'no-store'});
+      if(!r.ok)continue;
+      const d=await r.json();
+      if(!d.quote||(d.language&&d.language!=='de'))continue;
+      const a=d.authorName||'Unbekannt';
+      try{
+        localStorage.setItem('quote_de_date',today);
+        localStorage.setItem('quote_de_text',d.quote);
+        localStorage.setItem('quote_de_author',a);
+      }catch(e){}
+      showQuote(d.quote,a);return;
+    }catch(e){}
   }
 }
 function showQuote(q,a){
@@ -472,10 +476,13 @@ function expandEvents(events,rS,rE){
 
 // ── Load ──
 const ICAL_URL='https://p176-caldav.icloud.com/published/2/MjEyNDc1MTc1MjEyNDc1MXt1pLI_9q6RHSJMgFWwViSxkGTHGKkhHYB9zgorFGkLnDRmDKlzbSGK5e02Bu65fxiUcT5Nr4TP-lieTKE1SLo';
+// Our own Cloudflare Worker (cloudflare-worker/calendar.js) serves the calendar
+// with CORS headers. The public proxies are only a fallback — they are flaky.
+const CALENDAR_WORKER_URL='https://fischer-kalender.stefan-fischer6.workers.dev/';
 const PROXIES=[
-  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  ...(CALENDAR_WORKER_URL?[()=>CALENDAR_WORKER_URL]:[]),
   u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
 ];
 let allEvents=[];
 
@@ -640,8 +647,19 @@ function showPhoto(idx) {
   const img = document.getElementById('photoImg');
   img.classList.add('fade-out');
   setTimeout(() => {
-    img.src = photoUrls[idx];
     img.onload = () => img.classList.remove('fade-out');
+    img.onerror = () => {
+      // Drop the broken photo and move on instead of leaving an empty frame
+      photoUrls.splice(idx, 1);
+      if (!photoUrls.length) {
+        document.getElementById('photoStream').style.display = 'none';
+        return;
+      }
+      photoIndex = idx % photoUrls.length;
+      buildDots();
+      showPhoto(photoIndex);
+    };
+    img.src = photoUrls[idx];
   }, 400);
   const max = Math.min(photoUrls.length, 8);
   for (let i = 0; i < max; i++) {
